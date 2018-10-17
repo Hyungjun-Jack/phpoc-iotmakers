@@ -1,0 +1,674 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  margin: 0px;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  text-align: center;
+  margin: 5px;
+}
+
+.Header {
+  background-color: rgb(233, 233, 233);
+}
+
+.Header__Title {
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.Header__Menu {
+  width: 100%;
+  background-color: rgb(196, 195, 195);
+  display: flex;
+  justify-content: center;
+}
+
+.Menu__Fixed {
+  position: fixed;
+  top: 0;
+}
+
+.Header__Menu button {
+  /*background-color: rgb(212, 212, 212);*/
+  background-color: rgb(196, 195, 195);
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 10px 12px;
+  transition: 0.3s;
+  font-size: 16px;
+  text-align: left;
+}
+
+.MenuContent {
+  display: none;
+  padding: 5px 5px;
+}
+
+.MenuContent.Action__Buttons {
+  max-width: 600px;
+  margin: auto;
+  text-align: right;
+  margin-top: 0px;
+}
+
+.MenuContent button.Action {
+  background-color: rgb(85, 85, 85);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin: 0px;
+  -webkit-transition-duration: 0.4s; /* Safari */
+  transition-duration: 0.4s;
+  cursor: pointer;
+}
+
+.MenuContent.Network {
+  height: 500px;
+  max-width: 600px;
+  margin: auto;
+}
+
+.MenuContent.Expansion {
+  height: 540px;
+  max-width: 600px;
+  margin: auto;
+}
+
+.MenuContent.Tcp {
+  height: 500px;
+  max-width: 600px;
+  margin: auto;
+}
+
+.MenuContent.Admin {
+  height: 500px;
+  max-width: 600px;
+  margin: auto;
+}
+
+.MenuContent.IoTMakers {
+  height: 500px;
+  max-width: 600px;
+  margin: auto;
+}
+
+.Board {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.Board__Column {
+  width: 32%;
+  max-width: 400px;
+  margin: 0 10px 10px;
+}
+
+.Board .Board__Title {
+  margin-top: 10px;
+  margin-left: 5px;
+  font-weight: bold;
+  color: #585858;
+  font-size: 14px;
+}
+
+.Board .Board__Title:first-child {
+  margin-top: 0px;
+}
+
+.Board .Board__Text {
+  margin-top: 6px;
+  margin-left: 15px;
+  margin-right: 5px;
+  border-bottom: 1px solid #d1d1d1;
+  font-size: 14px;
+}
+
+.Error__Text {
+  color: #c43c24;
+}
+
+.Led__Button {
+  border: none;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  padding-left: 0px;
+  padding-right: 0px;
+  text-align: center;
+  color: white;
+  border-radius: 50%;
+  box-shadow: 4px 2px 10px rgba(133, 133, 133, 0.3),
+    1px 2px 6px rgba(133, 133, 133, 0.22);
+}
+
+.Folding__Button {
+  background-color: rgb(236, 236, 236);
+  color: rgb(62, 58, 57);
+  cursor: pointer;
+  padding: 10px 12px;
+  width: 100%;
+  height: 40px;
+  border: solid 1px rgb(204, 204, 204);
+  text-align: left;
+  outline: none;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.Folding__Button:after {
+  content: "\2212";
+  color: rgb(62, 58, 57);
+  font-weight: bold;
+  float: right;
+}
+
+.Closed:after {
+  content: "\002B";
+}
+
+.Folding__Content {
+  max-height: scrollHeight;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  box-shadow: 0 8px 38px rgba(133, 133, 133, 0.3),
+    0 5px 12px rgba(133, 133, 133, 0.22);
+}
+
+.Vertical {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.Vertical__Menu {
+  border: 1px solid rgb(204, 204, 204);
+  border-right: none;
+  background-color: rgb(241, 241, 241);
+  width: 17%;
+  height: 350px;
+  box-shadow: 0px 4px 10px rgba(133, 133, 133, 0.3),
+    0px 2px 6px rgba(133, 133, 133, 0.22);
+}
+
+.Vertical__Menu.Network {
+  height: 450px;
+}
+
+.Vertical__Menu.Tcp {
+  height: 400px;
+}
+
+.Vertical__Menu.Expansion {
+  height: 550px;
+}
+.Vertical__Menu.IoTMakers {
+  width: 18%;
+  min-width: 75px;
+}
+.Vertical__Menu.Admin {
+  width: 20%;
+  min-width: 120px;
+}
+
+.Vertical__Menu button {
+  display: block;
+  background-color: inherit;
+  color: black;
+  padding: 10px 10px;
+  width: 100%;
+  border: none;
+  outline: none;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 12px;
+}
+
+.Vertical__Menu button.Active {
+  background-color: rgb(204, 204, 204);
+}
+
+.Vertical__Content {
+  padding: 0px 12px;
+  border: 1px solid rgb(204, 204, 204);
+  width: 83%;
+  border-left: 1px solid rgb(204, 204, 204);
+  height: 350px;
+  box-shadow: 8px 4px 10px rgba(133, 133, 133, 0.3),
+    5px 2px 6px rgba(133, 133, 133, 0.22);
+}
+
+.Title {
+  margin-top: 10px;
+  margin-left: 5px;
+  font-weight: bold;
+  color: #314452;
+  font-size: 14px;
+}
+
+.Subtitle {
+  margin-top: 6px;
+  margin-left: 15px;
+  margin-right: 5px;
+  border-bottom: 1px solid #d1d1d1;
+  font-size: 14px;
+}
+
+.Vertical__Content.Network {
+  height: 450px;
+  overflow: auto;
+}
+
+.Vertical__Content.Network.Expand {
+  height: 630px;
+}
+
+div.List__Collapse {
+  display: none;
+  border: 0px;
+  height: 0px;
+  transition: 0.5s;
+}
+
+div.List__Expand {
+  display: block;
+  border: solid 1px rgb(204, 204, 204);
+  height: 200px;
+  overflow: auto;
+  transition: 0.5s;
+}
+
+.Table__List {
+  border-collapse: collapse;
+  font-size: 10pt;
+  color: #3e3a39;
+  width: 100%;
+}
+
+.Black__Button {
+  background-color: rgb(204, 204, 204);
+  color: black;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin: 0px;
+  -webkit-transition-duration: 0.4s; /* Safari */
+  transition-duration: 0.4s;
+  cursor: pointer;
+  height: 23px;
+  margin-bottom: 2px;
+}
+
+.Table__List tr {
+  height: 23px;
+}
+
+.Table__List tr.Bottom__Line {
+  border-bottom: solid 1px rgb(204, 204, 204);
+}
+.Table__List td {
+  padding-left: 5px;
+}
+
+.Table__List div.Wifi__Strength {
+  position: relative;
+  width: 16px;
+  height: 16px;
+}
+
+.Table__List div.Wifi__Strength.S4 {
+  background-image: url("wifi_4.png");
+}
+
+.Table__List div.Wifi__Strength.S3 {
+  background-image: url("wifi_3.png");
+}
+
+.Table__List div.Wifi__Strength.S2 {
+  background-image: url("wifi_2.png");
+}
+
+.Table__List div.Wifi__Strength.S1 {
+  background-image: url("wifi_1.png");
+}
+
+.Table__List div.Wifi__Security {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.Table__List div.Wifi__Security.Set {
+  background-image: url("wifi_lock.png");
+}
+
+.Vertical__Content.Expansion {
+  height: 550px;
+  overflow: auto;
+}
+
+.Vertical__Content.Tcp {
+  height: 400px;
+  overflow: auto;
+}
+
+.Vertical__Content.Admin {
+  width: 80%;
+}
+
+.Vertical__Content.IoTMakers {
+  width: 82%;
+}
+
+.Activity__Indicator {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.Loader {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 0;
+  width: 100%;
+}
+
+.Loader__Blade {
+  margin-left: auto;
+  margin-right: auto;
+
+  -webkit-perspective: 500;
+  -webkit-animation-name: loaderAnimation;
+  -webkit-animation-duration: 1.2s;
+  -webkit-animation-iteration-count: infinite;
+  -webkit-animation-timing-function: linear;
+
+  perspective: 500;
+  animation-name: loaderAnimation;
+  animation-duration: 1.2s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+.Blade__Center {
+  margin-top: 0;
+  width: 50%;
+  height: 50%;
+}
+
+#Loader__Blade .Blade {
+  position: absolute;
+  background-color: rgba(180, 178, 180, 1);
+
+  -webkit-border-radius: 10px;
+  -webkit-transform-origin: 50% 165%;
+
+  border-radius: 10px;
+  transform-origin: 50% 165%;
+}
+
+#Loader__Blade .Blade:nth-child(2) {
+  -webkit-transform: rotate(30deg);
+  transform: rotate(30deg);
+  background-color: rgba(4, 2, 4, 1);
+}
+#Loader__Blade .Blade:nth-child(3) {
+  -webkit-transform: rotate(60deg);
+  transform: rotate(60deg);
+  background-color: rgba(28, 26, 28, 1);
+}
+#Loader__Blade .Blade:nth-child(4) {
+  -webkit-transform: rotate(90deg);
+  transform: rotate(90deg);
+  background-color: rgba(52, 50, 52, 1);
+}
+#Loader__Blade .Blade:nth-child(5) {
+  -webkit-transform: rotate(120deg);
+  transform: rotate(120deg);
+  background-color: rgba(76, 78, 76, 1);
+}
+#Loader__Blade .Blade:nth-child(6) {
+  -webkit-transform: rotate(150deg);
+  transform: rotate(150deg);
+  background-color: rgba(100, 102, 100, 1);
+}
+#Loader__Blade .Blade:nth-child(7) {
+  -webkit-transform: rotate(180deg);
+  transform: rotate(180deg);
+  background-color: rgba(124, 122, 124, 1);
+}
+#Loader__Blade .Blade:nth-child(8) {
+  -webkit-transform: rotate(210deg);
+  transform: rotate(210deg);
+}
+#Loader__Blade .Blade:nth-child(9) {
+  -webkit-transform: rotate(240deg);
+  transform: rotate(240deg);
+}
+#Loader__Blade .Blade:nth-child(10) {
+  -webkit-transform: rotate(270deg);
+  transform: rotate(270deg);
+}
+#Loader__Blade .Blade:nth-child(11) {
+  -webkit-transform: rotate(300deg);
+  transform: rotate(300deg);
+}
+#Loader__Blade .Blade:nth-child(12) {
+  -webkit-transform: rotate(330deg);
+  transform: rotate(330deg);
+}
+
+@-webkit-keyframes loaderAnimation {
+  0% {
+    -webkit-transform: rotate(0deg) scale(0.5);
+  }
+  100% {
+    -webkit-transform: rotate(360deg) scale(0.5);
+  }
+}
+
+@keyframes loaderAnimation {
+  0% {
+    transform: rotate(0deg) scale(0.5);
+  }
+  100% {
+    transform: rotate(360deg) scale(0.5);
+  }
+}
+
+@media screen and (min-width: 668px) {
+  .Header__Menu button.Menu__Icon {
+    display: none;
+  }
+}
+
+@media screen and (min-width: 320px) and (max-width: 667px) {
+  .Header__Menu {
+    flex-direction: column;
+  }
+  .Header__Menu button:not(.Menu__Icon) {
+    display: none;
+  }
+  .Header__Menu button {
+    width: 100%;
+  }
+
+  .Header__Menu.Icon__Click button {
+    display: block;
+  }
+
+  .Board__Column {
+    width: 100%;
+  }
+}
+
+@media screen and (min-width: 320px) and (max-width: 667px) and (orientation: landscape) {
+  .Header__Menu {
+    flex-direction: row;
+  }
+  .Header__Menu button.Menu__Icon {
+    display: none;
+  }
+  .Header__Menu button:not(.Menu__Icon) {
+    text-align: center;
+    display: block;
+    font-size: 14px;
+  }
+}
+
+[class*="col-"] {
+  float: left;
+  width: 100%;
+  padding: 5px;
+}
+
+@media only screen and (min-width: 600px) {
+  .col-m-1 {
+    width: 8.33%;
+  }
+  .col-m-2 {
+    width: 16.66%;
+  }
+  .col-m-3 {
+    width: 25%;
+  }
+  .col-m-4 {
+    width: 33.33%;
+  }
+  .col-m-5 {
+    width: 41.66%;
+  }
+  .col-m-6 {
+    width: 50%;
+  }
+  .col-m-7 {
+    width: 58.33%;
+  }
+  .col-m-8 {
+    width: 66.66%;
+  }
+  .col-m-9 {
+    width: 75%;
+  }
+  .col-m-10 {
+    width: 83.33%;
+  }
+  .col-m-11 {
+    width: 91.66%;
+  }
+  .col-m-12 {
+    width: 100%;
+  }
+}
+
+@media only screen and (max-width: 1024px) {
+  .Loader.Small {
+    margin-top: -32.5px; /* half of #content height*/
+  }
+
+  .Loader__Blade.Small {
+    width: 65px;
+    height: 65px;
+  }
+
+  .Blade__Center.Small {
+    margin-left: 29px;
+  }
+
+  .Blade.Small {
+    height: 20px;
+    width: 7px;
+  }
+}
+
+@media only screen and (min-width: 1024px) {
+  .col-1 {
+    width: 8.33%;
+  }
+  .col-2 {
+    width: 16.66%;
+  }
+  .col-3 {
+    width: 25%;
+  }
+  .col-4 {
+    width: 33.33%;
+  }
+  .col-5 {
+    width: 41.66%;
+  }
+  .col-6 {
+    width: 50%;
+  }
+  .col-7 {
+    width: 58.33%;
+  }
+  .col-8 {
+    width: 66.66%;
+  }
+  .col-9 {
+    width: 75%;
+  }
+  .col-10 {
+    width: 83.33%;
+  }
+  .col-11 {
+    width: 91.66%;
+  }
+  .col-12 {
+    width: 100%;
+  }
+
+  .Loader.Big {
+    margin-top: -65px; /* half of #content height*/
+  }
+
+  .Loader__Blade.Big {
+    width: 130px;
+    height: 130px;
+  }
+
+  .Blade__Center.Big {
+    margin-left: 58px;
+  }
+
+  .Blade.Big {
+    height: 40px;
+    width: 14px;
+  }
+}

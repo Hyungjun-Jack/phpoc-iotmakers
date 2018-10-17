@@ -1,8 +1,11 @@
 <?php
 include_once "/lib/sn_tcp_ac.php";
-include_once "/lib/sn_json_b1.php";
+include_once "sn_iotmakers_tag_hander.php";
+
+define("JSON_WS", "\x20\x09\x0a\x0d");
 
 define("IM_KEEPALIVE_PERIODIC_SEC", 30);
+define("IM_AUTH_PERIODIC_SEC", 10);
 define("IM_READ_TIMEOUT_SEC", 3);
 define("IM_SOCKET_TIMEOUT", 3);
 define("IM_PACKET_HEAD_LEN", 35);
@@ -12,6 +15,7 @@ define("READ_BUFF_LEN", 40);
 
 define("STOP_MARK",	"\b");
 define("STRING_VAL", "\"\b\"");
+define("NUMVER_VAL", "\b");
 
 define("ATTR_athnRqtNo", "athnRqtNo");
 define("ATTR_athnNo", "athnNo");
@@ -21,6 +25,8 @@ define("ATTR_snsnTagCd", "snsnTagCd");
 define("ATTR_dataTypeCd", "dataTypeCd");
 
 $FMT_AUTH_DEV_REQ = "{\"extrSysId\":" . STRING_VAL . ",\"devId\":" . STRING_VAL . ",\"athnRqtNo\":" . STRING_VAL . "}";
+$FMT_COLL_NUM_REQ = "{\"extrSysId\":" . STRING_VAL . ",\"devColecDataVOs\":[{\"m2mSvcNo\":0,\"devId\":" . STRING_VAL . ",\"colecRowVOs\":[{\"snsnDataInfoVOs\":[{\"dataTypeCd\":" . STRING_VAL . ",\"snsnVal\":" . NUMVER_VAL . "}]}]}]}";
+$FMT_CTRL_ACK_RES = "{\"respCd\":\"100\",\"respMsg\":\"Success\"}";
 
 define("head_01", "\x11\x01\x00\x23"); // protocol version(1), message header type(1), message header length(2) 0x23 = 35
 define("head_02_TypeDevAuth", "\x60\xe0"); // Message Type(2bit) + MEP(2bit) + Method Type(12bit)
@@ -39,23 +45,14 @@ define("head_05", "\x00\x00\x03\x00\x00");  // Encryption Usage(1bit) + Encrypti
                                     //Result Code
 
 $sn_tcp_id = 0;
-$sn_device_id = "sollaeD1535615200924";
-$sn_device_password = "zpd1q95i3";
-$sn_gateway_id = "OPEN_TCP_001PTL001_1000003859";
+$sn_device_id = "";
+$sn_device_password = "";
+$sn_gateway_id = "";
 $sn_auth_success = 0;
 $sn_athn_no = "";
 
 $sn_tick = 0;
 $sn_keepalive_sent_tick = 0;
-
-function im_init($tcp_id, $device_id, $device_password, $gateway_id)
-{
-    global $sn_device_id, $sn_device_password, $sn_gateway_id;
-
-    $sn_device_id = $device_id;
-    $sn_device_password = $device_password;
-    $sn_gateway_id = $gateway_id;
-}
 
 function im_get_tick()
 {
@@ -75,27 +72,35 @@ function im_tcp_connected()
 {
     global $sn_tcp_ac_pid, $sn_tcp_id;
 
-    if($sn_tcp_ac_pid[$sn_tcp_id] == 0 || ($sn_tcp_ac_pid[$sn_tcp_id] != 0 && tcp_state($sn_tcp_id) == TCP_CLOSED))
+    if($sn_tcp_ac_pid[$sn_tcp_id] == 0)
         return TCP_CLOSED;
     
     return tcp_state($sn_tcp_id);
 }
 
-function sn_im_sock_flush()
+function sn_im_tcp_close()
 {
     global $sn_tcp_ac_pid, $sn_tcp_id;
-
-    while(1)
-    {
-        if(pid_ioctl($sn_tcp_ac_pid[$sn_tcp_id], "get txlen") <= 0)
-            break;
-    }
+    pid_close($sn_tcp_ac_pid[$sn_tcp_id]);
+    $sn_tcp_ac_pid[$sn_tcp_id] = 0;
 }
 
 function sn_body_sizeof_devAuth($gateway_id, $device_id, $device_password)
 {
     global $FMT_AUTH_DEV_REQ;
     return strlen($FMT_AUTH_DEV_REQ) - (strlen(STOP_MARK) * 3) + strlen($gateway_id) + strlen($device_id) + strlen($device_password);
+}
+
+function sn_body_sizeof_numdata_collection($gateway_id, $device_id, $tag, $tag_value)
+{
+    global $FMT_COLL_NUM_REQ;
+    return strlen($FMT_COLL_NUM_REQ) - (strlen(STOP_MARK) * 4) + strlen($gateway_id) + strlen($device_id) + strlen($tag) + strlen($tag_value);
+}
+
+function sn_body_sizeof_contrl_ack_resp()
+{
+    global $FMT_CTRL_ACK_RES;
+    return strlen($FMT_CTRL_ACK_RES);
 }
 
 function sn_im_sock_send($data, $data_len)
@@ -167,6 +172,27 @@ function sn_head_send_keepalive()
     return $sent;
 }
 
+function sn_head_send_collection($auth_no)
+{
+	$sent = 0;
+	$sent += sn_im_sock_send(head_01, strlen(head_01));
+	$sent += sn_im_sock_send(head_02_TypeReport, strlen(head_02_TypeReport));
+	$sent += sn_im_sock_send(head_03, strlen(head_03));
+	$sent += sn_im_sock_send($auth_no, strlen(head_04));
+	$sent += sn_im_sock_send(head_05, strlen(head_05));
+	return $sent;
+}
+
+function sn_head_send_control_ack($auth_no)
+{
+    $sent = 0;
+	$sent += sn_im_sock_send(head_01, strlen(head_01));
+	$sent += sn_im_sock_send(head_02_TypeAck, strlen(head_02_TypeAck));
+	$sent += sn_im_sock_send(head_03, strlen(head_03));
+	$sent += sn_im_sock_send($auth_no, strlen(head_04));
+	$sent += sn_im_sock_send(head_05, strlen(head_05));
+}
+
 function sn_body_send_devAuth($gateway_id, $device_id, $device_password)
 {
     global $FMT_AUTH_DEV_REQ;
@@ -185,6 +211,62 @@ function sn_body_send_devAuth($gateway_id, $device_id, $device_password)
 
     return $sent;
 
+}
+
+function sn_body_send_collection_data($fmt_req, $gateway_id, $device_id, $tag, $tag_value)
+{
+    $req = explode(STOP_MARK, $fmt_req);
+    $sent = 0;
+    $sent += sn_im_sock_send($req[0], strlen($req[0]));
+    $sent += sn_im_sock_send($gateway_id, strlen($gateway_id));
+
+    $sent += sn_im_sock_send($req[1], strlen($req[1]));
+    $sent += sn_im_sock_send($device_id, strlen($device_id));
+
+    $sent += sn_im_sock_send($req[2], strlen($req[2]));
+    $sent += sn_im_sock_send($tag, strlen($tag));
+
+    $sent += sn_im_sock_send($req[3], strlen($req[3]));
+    $sent += sn_im_sock_send($tag_value, strlen($tag_value));
+
+    $sent += sn_im_sock_send($req[4], strlen($req[4]));
+
+    return $sent;
+}
+
+function sn_body_send_control_ack()
+{
+    global $FMT_CTRL_ACK_RES;
+    return sn_im_sock_send($FMT_CTRL_ACK_RES, strlen($FMT_CTRL_ACK_RES));
+}
+
+function sn_find_text_value($json, $key)
+{
+    if(($pos = strpos($json, $key)) !== FALSE)
+    {
+        $key_length = strlen($key);
+        $vstart = strpos($json, "\"", $pos + $key_length + 1);
+        $vend = strpos($json, "\"", $vstart + 1);
+        $value = substr($json, $vstart + 1, $vend - $vstart - 1);
+
+        return $value;
+    }
+    return "";
+}
+
+function sn_find_number_value($json, $key)
+{
+    if(($pos = strpos($json, $key)) !== FALSE)
+    {
+        $vstart = strpos($json, ":", $pos);
+        $json = substr($json, $vstart + 1);
+        $json = ltrim($json, JSON_WS);
+        $value_length = strlen($json) - strlen(ltrim($json, "-+.eE0123456789"));
+        $value = substr($json, 0, $value_length);
+
+        return $value;
+    }
+    return FALSE;
 }
 
 /*
@@ -210,27 +292,21 @@ function sn_read_DevAuth_res_body($body_length)
         return;
     }
 
-    $result = json_search($rbuf, ATTR_athnRqtNo);
-    $type = json_text_type($result);
-    $value = json_text_value($result);
-    error_log("> $type $value\r\n");
+    if(($value = sn_find_text_value($rbuf, ATTR_athnRqtNo)) != "")
+        error_log(ATTR_athnRqtNo . ": $value");
+
+    if(($value = sn_find_text_value($rbuf, ATTR_athnNo)) != "")
+    {
+        error_log(ATTR_athnNo . ": $value");
+        $sn_athn_no = $value;
+        $sn_auth_success = 1;    
+    }
+
+    if(($value = sn_find_text_value($rbuf, ATTR_respCd)) != "")
+        error_log(ATTR_respCd . ": $value");
     
-    $result = json_search($rbuf, ATTR_athnNo);
-    $type = json_text_type($result);
-    $value = json_text_value($result);
-    error_log("> $type $value\r\n");
-    $sn_athn_no = $value;
-    $sn_auth_success = 1;
-
-    $result = json_search($rbuf, ATTR_respCd);
-    $type = json_text_type($result);
-    $value = json_text_value($result);
-    error_log("> $type $value\r\n");
-
-    $result = json_search($rbuf, ATTR_respMsg);
-    $type = json_text_type($result);
-    $value = json_text_value($result);
-    error_log("> $type $value\r\n");
+    if(($value = sn_find_text_value($rbuf, ATTR_respMsg)) != "")
+        error_log(ATTR_respMsg . ": $value");        
 }
 
 /*
@@ -248,15 +324,95 @@ function sn_read_KeepAlive_res_body($body_length)
         return;
     }
 
-    $result = json_search($rbuf, ATTR_respCd);
-    $type = json_text_type($result);
-    $value = json_text_value($result);
-    error_log("> $type $value\r\n");
+    if(($value = sn_find_text_value($rbuf, ATTR_respCd)) != "")
+        error_log(ATTR_respCd . ": $value");
+    
+    if(($value = sn_find_text_value($rbuf, ATTR_respMsg)) != "")
+        error_log(ATTR_respMsg . ": $value");        
+}
 
-    $result = json_search($rbuf, ATTR_respMsg);
-    $type = json_text_type($result);
-    $value = json_text_value($result);
-    error_log("> $type $value\r\n");
+/*
+DBG 0130 im_log_hex: 0000: 7b 22 6d 73 67 48 65 61 | 64 56 4f 22 3a 7b 22 6d   {"msgHeadVO":{"m
+DBG 0130 im_log_hex: 0000: 61 70 48 65 61 64 65 72 | 45 78 74 65 6e 73 69 6f   apHeaderExtensio
+DBG 0130 im_log_hex: 0000: 6e 22 3a 7b 7d 7d 2c 22 | 72 65 73 70 43 64 22 3a   n":{}},"respCd":
+DBG 0130 im_log_hex: 0000: 22 31 30 30 22 2c 22 72 | 65 73 70 4d 73 67 22 3a   "100","respMsg":
+DBG 0130 im_log_hex: 0000: 22 53 55 43 43 45 53 53 | 22 7d                     "SUCCESS"}
+*/
+function sn_read_Report_res_body($body_length)
+{
+    $rbuf = "";
+    $read = sn_im_sock_recv($rbuf, $body_length);
+    if($read < $body_length)
+    {
+        error_log("sn_read_Report_res_body: fail to reading.");
+        return;
+    }
+
+    if(($value = sn_find_text_value($rbuf, ATTR_respCd)) != "")
+        error_log(ATTR_respCd . ": $value");
+
+    if(($value = sn_find_text_value($rbuf, ATTR_respMsg)) != "")
+        error_log(ATTR_respCd . ": $value");
+}
+
+/*
+CONTROL EXAMPLES
+STR = {"mapHeaderExtension":{},"devCnvyDataVOs":[{"devId":"river4D1459818172685","cnvyRowVOs":[{"snsnDataInfoVOs":[],"sttusDataInfoVOs":[],"contlDataInfoVOs":[],"cmdDataInfoVOs":[],"binDataInfoVOs":[],"strDataInfoVOs":[{"snsnTagCd":"led","strVal":"aaa"}],"dtDataInfoVOs":[],"genlSetupDataInfoVOs":[],"sclgSetupDataInfoVOs":[],"binSetupDataInfoVOs":[],"mapRowExtension":{}}]}],"msgHeadVO":{"mapHeaderExtension":{}}}
+NUM = {"mapHeaderExtension":{},"devCnvyDataVOs":[{"devId":"river4D1459818172685","cnvyRowVOs":[{"snsnDataInfoVOs":[{"dataTypeCd":"volume","snsnVal":999.0}],"sttusDataInfoVOs":[],"contlDataInfoVOs":[],"cmdDataInfoVOs":[],"binDataInfoVOs":[],"strDataInfoVOs":[],"dtDataInfoVOs":[],"genlSetupDataInfoVOs":[],"sclgSetupDataInfoVOs":[],"binSetupDataInfoVOs":[],"mapRowExtension":{}}]}],"msgHeadVO":{"mapHeaderExtension":{}}}
+*/
+function sn_read_Control_req_body($body_length)
+{
+    $rbuf = "";
+    $read = sn_im_sock_recv($rbuf, $body_length);
+    if($read < $body_length)
+    {
+        error_log("sn_read_Control_req_body: fail to reading.");
+        return;
+    }
+
+    if(($tag_name = sn_find_text_value($rbuf, ATTR_snsnTagCd)) != "")
+    {
+        error_log(ATTR_snsnTagCd . ": $tag_name");
+        if(($tag_value = sn_find_text_value($rbuf, "strVal")) != "")
+        {
+            error_log("$tag_name : $tag_value");
+            im_tag_handler($tag_name, $tag_value);
+            return;
+        }
+
+        error_log("sn_read_Control_req_body: Can't find the key, $value.");
+        return;
+    }
+    else if(($tag_name = sn_find_text_value($rbuf, ATTR_dataTypeCd)) != "")
+    {
+        error_log(ATTR_dataTypeCd . ": $tag_name");
+        if(($tag_value = sn_find_number_value($rbuf, "snsnVal")) != "")
+        {
+            $tag_value = (float)$tag_value;
+            error_log("$tag_name : $tag_value");
+            im_tag_handler($tag_name, $tag_value);
+            return;
+        }
+
+        error_log("sn_read_Control_req_body: Can't find the key, $value.");
+        return;
+    }
+}
+
+function sn_im_send_control_ack()
+{
+    global $sn_athn_no;;
+    $body_length = sn_body_sizeof_contrl_ack_resp();
+    $packet_length = IM_PACKET_HEAD_LEN + $body_length;
+
+    $sent = 0;
+    // write length of packet.
+    sn_write_length($packet_length);
+    // head
+    $sent += sn_head_send_control_ack($sn_athn_no);
+    // body
+    $sent += sn_body_send_control_ack();
+
 }
 
 function sn_head_is_TypeDevAuth_res(&$head)
@@ -314,7 +470,6 @@ function sn_recv_packet($timeout)
         if($packet_length < IM_PACKET_HEAD_LEN || $packet_length > 2048)
         {
             error_log("sn_recv_packet: illegal packet length.");
-            sn_im_sock_flush();
             return -1;
         }
 
@@ -323,7 +478,6 @@ function sn_recv_packet($timeout)
         if($read < IM_PACKET_HEAD_LEN)
         {
             error_log("sn_recv_packet: fail to reading.");
-            sn_im_sock_flush();
             return -1;
         }
 
@@ -332,12 +486,28 @@ function sn_recv_packet($timeout)
         {
             error_log("sn_recv_packet: DevAuth_res");
             sn_read_DevAuth_res_body($body_length);
-        }
+        } 
         else if(sn_head_is_TypeKeepAlive_res($rbuf))
         {
             error_log("sn_recv_packet: TypeKeepAlive_res");
             sn_read_KeepAlive_res_body($body_length);
         }
+        else if(sn_head_is_TypeReport_res($rbuf))
+        {
+            error_log("sn_recv_packet: Report_res");
+            sn_read_Report_res_body($body_length);
+        }
+        else if(sn_head_is_TypeCtrl_req($rbuf))
+        {
+            error_log("sn_recv_packet: TypeCtrl_req");
+            sn_im_send_control_ack();
+            sn_read_Control_req_body($body_length);
+        }
+        else
+        {
+            error_log("sn_recv_packet: unknown head");
+        }
+        
         
         if(sn_im_sock_available() <= 0)
         {
@@ -355,6 +525,12 @@ function sn_im_auth_device()
     global $sn_device_id, $sn_device_password, $sn_gateway_id;
     $body_length = sn_body_sizeof_devAuth($sn_gateway_id, $sn_device_id, $sn_device_password);
     $packet_length = IM_PACKET_HEAD_LEN + $body_length;
+
+    if($sn_device_id == "" || $sn_device_password == "" || $sn_gateway_id == "")
+    {
+        error_log("sn_im_auth_device: device information is not set.");
+        return -1;
+    }
 
     $sent = 0;
     // write length of packet.
@@ -398,16 +574,65 @@ function sn_im_send_keepalive()
     sn_recv_packet(IM_READ_TIMEOUT_SEC * 1000);
 }
 
-$sn_keep_alive_sent_tick = 0;
+function im_init($tcp_id, $device_id, $device_password, $gateway_id)
+{
+    global $sn_device_id, $sn_device_password, $sn_gateway_id;
 
+    $sn_device_id = $device_id;
+    $sn_device_password = $device_password;
+    $sn_gateway_id = $gateway_id;
+}
+
+function im_send_numdata($tag, $value)
+{
+    global $sn_device_id, $sn_gateway_id, $sn_auth_success, $sn_athn_no;
+    global $FMT_COLL_NUM_REQ;
+    if(im_tcp_connected() == TCP_CONNECTED && $sn_auth_success == 1)
+    {
+        $tag_value = sprintf("%.12f", $value);
+
+        $body_length = sn_body_sizeof_numdata_collection($sn_gateway_id, $sn_device_id, $tag, $tag_value);
+        $packet_length = IM_PACKET_HEAD_LEN + $body_length;
+
+        $sent = 0;
+        // write length of packet.
+        sn_write_length($packet_length);
+        // header
+        $sent += sn_head_send_collection($sn_athn_no);
+        // body
+        $sent += sn_body_send_collection_data($FMT_COLL_NUM_REQ, $sn_gateway_id, $sn_device_id, $tag, $tag_value);
+
+        if($sent != $packet_length)
+        {
+            error_log("im_send_numdata: fail to send data.");
+            return -1;
+        }
+
+        sn_recv_packet(IM_READ_TIMEOUT_SEC * 1000);
+    }
+    else
+    {
+        error_log("im_send_numdata: tcp is not connected.");
+    }
+
+    return 0;
+}
+
+$sn_keep_alive_sent_tick = 0;
+$sn_auth_try_tick = 0;
 function im_loop()
 {
-    global $sn_tcp_ac_pid, $sn_tcp_id, $sn_auth_success, $sn_keep_alive_sent_tick;
+    global $sn_tcp_ac_pid, $sn_tcp_id, $sn_auth_success, $sn_keep_alive_sent_tick, $sn_auth_try_tick;
 
     if(im_tcp_connected() == TCP_CLOSED)
     {
         $sn_auth_success = 0;
         $keep_alive_sent_tick = 0;
+        $current_tick = im_get_tick();
+        if($sn_auth_try_tick != 0 && ($current_tick - $sn_auth_try_tick < (IM_AUTH_PERIODIC_SEC * 1000)))
+            return;
+        
+        $sn_auth_try_tick = 0;
         error_log(sprintf("Connected to %s:%d", IM_SERVER_IP, IM_SERVER_PORT));
         tcp_client($sn_tcp_id, IM_SERVER_IP, IM_SERVER_PORT);
     }
@@ -415,7 +640,12 @@ function im_loop()
     {
         if($sn_auth_success != 1)
         {
-            sn_im_auth_device();
+            $sn_auth_try_tick = im_get_tick();
+            if(sn_im_auth_device() < 0)
+            {
+                sn_im_tcp_close();
+                return;
+            }
             return;
         }
 
