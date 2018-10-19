@@ -174,11 +174,6 @@ if($wlan_status == "")
                 if(document.body.getAttribute('data-wlan-cts-protection') == 1)
                     document.getElementById("cts").checked = true;
 
-                // IoTMakers
-                document.getElementById("im_device_id").value = document.body.getAttribute('data-im-device-id');
-                document.getElementById("im_device_pwd").value = document.body.getAttribute('data-im-device-pwd');
-                document.getElementById("im_gateway_id").value = document.body.getAttribute('data-im-gateway-id');
-
                 // Admin
 
                 //------------------------------------------------------------------------
@@ -193,12 +188,10 @@ if($wlan_status == "")
 
                 setInternetState();
                 setWlanState();
-                setIoTMakersSettings();
                 setAdminSettings();
 
                 document.getElementById("Home__Menu__Open").click();
                 document.getElementById("Ipv4__Network__Open").click();
-                document.getElementById("IoTMakers__Open").click();
                 document.getElementById("Admin__Open").click();
             });
 
@@ -293,14 +286,6 @@ if($wlan_status == "")
                 }
                 ?>
 
-                if((x = validCheckIoTMakers()).element.length != 0)
-                {
-                    document.getElementById("IoTMakers__Menu__Open").click();
-                    document.getElementById(x.menu_name + "__Open").click();
-                    x.element[0].focus();
-                    return;
-                }
-
                 if((x = validCheckAdmin()).element.length != 0)
                 {
                     document.getElementById("Admin__Menu__Open").click();
@@ -317,12 +302,6 @@ if($wlan_status == "")
 
             function network_setup_finish()
             {
-                document.getElementById("iotmakers_setup").target = "submit_target";
-                document.getElementById("iotmakers_setup").submit();
-            }
-
-            function iotmakers_setup_finish()
-            {
                 document.getElementById("admin_setup").target = "submit_target";
                 document.getElementById("admin_setup").submit();
             }
@@ -330,7 +309,6 @@ if($wlan_status == "")
             function admin_setup_finish()
             {
                 setAdminSettings();
-                setIoTMakersSettings();
                 document.getElementById("Activity__Indicator").style.display = "none";
             }
         </script>
@@ -364,7 +342,6 @@ if($wlan_status == "")
                 <button type="button" class="Menu__Icon" onclick="onClickMenuIcon()">&#9776;</button>
                 <button type="button" class="Menu__Links" onclick="openMenu(event, 'Home')" id="Home__Menu__Open">홈</button>
                 <button type="button" class="Menu__Links" onclick="openMenu(event, 'Network__Settings')" id="Network__Menu__Open">인터넷</button>
-                <button type="button" class="Menu__Links" onclick="openMenu(event, 'IoTMakers__Settings')" id="IoTMakers__Menu__Open">IoTMakers</button>
                 <button type="button" class="Menu__Links" onclick="openMenu(event, 'Admin__Settings')" id="Admin__Menu__Open">관리자</button>
             </div>
         </div>
@@ -387,17 +364,6 @@ if($wlan_status == "")
 
                         <div class="Board__Title">기타</div>
                         <div class="Board__Text" id='Etc__Polling'></div>
-                    </div>
-                </div>
-                <div class="Board__Column">
-                    <button class="Folding__Button" onClick="foldingButton(this)">IoTMakers</button>
-                    <div class="Folding__Content">
-                        <div class="Board__Title">디바이스 아이디</div>
-                        <div class="Board__Text" id='IM__Device__Id'></div>
-                        <div class="Board__Title">디바이스 비밀번호</div>
-                        <div class="Board__Text" id='IM__Device__Pwd'></div>
-                        <div class="Board__Title">Gateway 연결 ID</div>
-                        <div class="Board__Text" id='IM__Gateway__Id'></div>
                     </div>
                 </div>
             </div>
@@ -607,33 +573,6 @@ if($wlan_status == "")
             </form>
         </div>
 
-        <div id="IoTMakers__Settings" class="MenuContent IoTMakers">
-            <form id="iotmakers_setup" action="iotmakers_setup.php" method="post">
-                <div class="Vertical">
-                    <div class='Vertical__Menu IoTMakers'>
-                        <button type="button" class="IoTMakers__Button" onclick="openSubMenu('Vertical__Content IoTMakers', 'IoTMakers__Button', event, 'IoTMakers')" id="IoTMakers__Open">IoTMakers</button>
-                    </div>
-                    <div id="IoTMakers" class="Vertical__Content IoTMakers">
-                        <div class="Title">디바이스 아이디</div>
-                        <div class="Subtitle">
-                            <input type="text" id="im_device_id" name="im_device_id">
-                            <div id="im_device_id_error" class="Error__Text"></div>
-                        </div>
-                        <div class="Title">디바이스 패스워드</div>
-                        <div class="Subtitle">
-                            <input type="text" id="im_device_pwd" name="im_device_pwd">
-                            <div id="im_device_pwd_error" class="Error__Text"></div>
-                        </div>
-                        <div class="Title">Gateway 연결 ID</div>
-                        <div class="Subtitle">
-                            <input type="text" size="30" id="im_gateway_id" name="im_gateway_id">
-                            <div id="im_gateway_id_error" class="Error__Text"></div>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-
         <div id="Admin__Settings" class="MenuContent Admin">
             <form id="admin_setup" action="admin_setup.php" method="post">
                 <div class="Vertical">
@@ -726,10 +665,6 @@ if($wlan_status == "")
             document.body.setAttribute('data-wlan-short-slot', <? echo envs_get_net_opt($envs, NET_OPT_SHORT_SLOT) ?>);
             document.body.setAttribute('data-wlan-cts-protection', <? echo envs_get_net_opt($envs, NET_OPT_CTS_PROT) ?>);
 
-            document.body.setAttribute('data-im-device-id', '<? echo find_device_id()?>')
-            document.body.setAttribute('data-im-device-pwd', '<? echo find_device_password()?>')
-            document.body.setAttribute('data-im-gateway-id', '<? echo find_gateway_id()?>')
-
             function setInternetState(){
                 var internet_status = "";
                 if(document.body.getAttribute('data-ipv4-type') == 0)
@@ -789,17 +724,6 @@ if($wlan_status == "")
                 }
             }
 
-            function setIoTMakersSettings() 
-            {
-                document.body.setAttribute('data-im-device-id', document.getElementById("im_device_id").value);
-                document.body.setAttribute('data-im-device-pwd', document.getElementById("im_device_pwd").value);
-                document.body.setAttribute('data-im-gateway-id', document.getElementById("im_gateway_id").value);
-
-                document.getElementById("IM__Device__Id").innerHTML = document.body.getAttribute('data-im-device-id');
-                document.getElementById("IM__Device__Pwd").innerHTML = document.body.getAttribute('data-im-device-pwd');
-                document.getElementById("IM__Gateway__Id").innerHTML = document.body.getAttribute('data-im-gateway-id');
-            }
-
             function setAdminSettings(){
                 var text = "";
                 
@@ -829,48 +753,6 @@ if($wlan_status == "")
                     x.element.push(element);
                     if(x.menu_name == "")
                         x.menu_name = "Admin";
-                }
-                return x;
-            }
-
-            function validCheckIoTMakers()
-            {
-                var x = {};
-                x.menu_name = "";
-                x.element = [];
-
-                document.getElementById("im_device_id_error").innerHTML = "";
-                document.getElementById("im_device_pwd_error").innerHTML = "";
-                document.getElementById("im_gateway_id_error").innerHTML = "";
-
-                element = document.getElementById("im_device_id");
-                element.value = element.value.trim();
-                if(element.value == "" || element.value.length > 20)
-                {
-                    document.getElementById("im_device_id_error").innerHTML = "디바이스 아이디를 최대 20자로 입력하세요.";
-                    x.element.push(element);
-                    if(x.menu_name == "")
-                        x.menu_name = "IoTMakers";
-                }
-
-                element = document.getElementById("im_device_pwd");
-                element.value = element.value.trim();
-                if(element.value == "" || element.value.length < 9 || element.value.length > 12)
-                {
-                    document.getElementById("im_device_pwd_error").innerHTML = "디바이스 패스워드 9 ~ 12자로 입력하세요.";
-                    x.element.push(element);
-                    if(x.menu_name == "")
-                        x.menu_name = "IoTMakers";
-                }
-
-                element = document.getElementById("im_gateway_id");
-                element.value = element.value.trim();
-                if(element.value == "")
-                {
-                    document.getElementById("im_gateway_id_error").innerHTML = "Gateway 연결ID를 입력하세요.";
-                    x.element.push(element);
-                    if(x.menu_name == "")
-                        x.menu_name = "IoTMakers";
                 }
                 return x;
             }

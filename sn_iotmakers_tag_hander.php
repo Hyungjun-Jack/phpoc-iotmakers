@@ -10,18 +10,18 @@ function im_tag_handler($tag_name, $tag_value)
 
     error_log("im_tag_handler: $tag_name, $tag_value");
 
-    //if(is_string($tag_value))
-    //{
-    //    error_log("im_tag_handler: string.");
-    //}
-    //else
-    //{
-    //    error_log("im_tag_handler: float.");
-    //}
+    if(is_string($tag_value))
+    {
+        error_log("im_tag_handler: string.");
+    }
+    else
+    {
+        error_log("im_tag_handler: float.");
+    }
 
     switch($tag_name)
     {
-        case "example":
+        case "led":
             if(is_string($tag_value) && $tag_value == "on")
                 uio_out(0, $example_led_pin, HIGH);
             else if(is_string($tag_value) && $tag_value == "off")

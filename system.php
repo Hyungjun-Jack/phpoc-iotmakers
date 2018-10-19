@@ -3,123 +3,11 @@
 include_once "/lib/sd_spc.php";
 include_once "/lib/sd_340.php";
 
-define("PROJECT_ID", "PROJECT_2018_4_03");
+define("PROJECT_ID", "PROJECT_2018_4_04");
 define("DEFAULT_ADMIN_PWD", "admin\x00\x00\x00");
 
 define("NM0_LENGTH", 2048);
-
 define("CODE_ADMIN", 0x01);
-define("CODE_IOTMAKERS", 0x02)
-
-define("IOTMAKERS_MAX_STRING_LENGTH", 128)
-
-function find_smart_expansion_board($sid, $verbose = false)
-{
-  $product = "";
-  $pid = sd_spc_pid_open_nodie("/mmap/spc0", "spc_scan");
-  $rbuf = "";
-
-  pid_ioctl($pid, "sets $sid crc 1");
-
-  pid_write($pid, "get uid");
-  pid_ioctl($pid, "spc $sid 0");
-
-  while(pid_ioctl($pid, "get state"))
-    ;
-
-  usleep(20000); // wait response from duplicated sid slave
-
-  if(pid_ioctl($pid, "get error"))
-  {
-    if(pid_ioctl($pid, "get error sto"))
-    {
-      error_log(sprintf("sid%d: slave timeout.\r\n", $sid));
-    }
-    else
-    {
-      error_log(sprintf("sid%02d: ", $sid));
-
-      if(pid_ioctl($pid, "get error mbit"))
-        error_log("Mbit error");
-
-      if(pid_ioctl($pid, "get error csum"))
-        error_log("csum mismatch");
-
-      if(pid_ioctl($pid, "get error urg"))
-        error_log("Ubit error ");
-
-      if(pid_ioctl($pid, "get error sid"))
-        error_log("sid mismatch ");
-
-      if(pid_ioctl($pid, "get error addr"))
-        error_log("address mismatch");
-
-      error_log("\r\n");
-      
-      $product = "ERROR";
-    }
-  }
-  else
-  {
-    pid_read($pid, $rbuf);
-
-    $resp = explode(",", $rbuf);
-
-    if(count($resp) == 2)
-    {
-      $uid_hex = $resp[1];
-
-      if(strlen($uid_hex) != 24)
-        $uid_hex = "";
-    }
-    else
-      $uid_hex = "";
-
-    if($uid_hex)
-    {
-      $uid_bin = spc_decrypt_uid($uid_hex);
-
-      if($uid_bin)
-      {
-        pid_write($pid, "get did");
-        pid_ioctl($pid, "spc $sid 0");
-
-        while(pid_ioctl($pid, "get state"))
-          ;
-
-        pid_read($pid, $rbuf);
-
-        if($verbose)
-          error_log(sprintf("%s\r\n", $rbuf));
-        
-        $resp = explode(",", $rbuf);
-
-        if($verbose)
-          error_log(sprintf("sid%d: %s %12x\r\n", $sid, $resp[2], bin2int($uid_bin, 5, 6, true)));
-
-        $product = $resp[2];
-      }
-      else
-      {
-        if($verbose)
-          error_log(sprintf("sid%d: invalid uid\r\n", $sid));
-        $product = "ERROR";
-      }
-    }
-    else
-    {
-      if($verbose)
-        error_log(sprintf("sid%d: invalid 'get uid' response\r\n", $sid));
-      $product = "ERROR";
-    }
-  }
-
-  pid_ioctl($pid, "sets $sid crc 0");
-
-  pid_close($pid);
-  
-  return $product;
-}
 
 function system_crc_check()
 {
@@ -182,19 +70,6 @@ function system_initialize()
   //----------------------------------------------------------------------
   // ADMIN...
   $settings = make_setting_block(CODE_ADMIN, 0x00, DEFAULT_ADMIN_PWD);
-  pid_write($nm0_pid, $settings);
-  //----------------------------------------------------------------------
-
-  //----------------------------------------------------------------------
-  // IoTMakers
-  // device id
-  $settings = make_setting_block(CODE_IOTMAKERS, 0, str_repeat("\x00", 20));
-  pid_write($nm0_pid, $settings);
-  // device password
-  $settings = make_setting_block(CODE_IOTMAKERS, 1, str_repeat("\x00", 12));
-  pid_write($nm0_pid, $settings);
-  // gateway id
-  $settings = make_setting_block(CODE_IOTMAKERS, 2, str_repeat("\x00", IOTMAKERS_MAX_STRING_LENGTH));
   pid_write($nm0_pid, $settings);
   //----------------------------------------------------------------------
   
@@ -363,34 +238,6 @@ function find_admin_password()
   }
   
   return $pwd;
-}
-
-function find_device_id()
-{
-  $setting = find_setting(CODE_IOTMAKERS, 0);
-  if($setting != "")
-    return rtrim($setting, "\x00");
-
-  return "";
-}
-
-function find_device_password()
-{
-  $setting = find_setting(CODE_IOTMAKERS, 1);
-  if($setting != "")
-    return rtrim($setting, "\x00");
-
-  return "";
-}
-
-
-function find_gateway_id()
-{
-  $setting = find_setting(CODE_IOTMAKERS, 2);
-  if($setting != "")
-    return rtrim($setting, "\x00");
-
-  return "";
 }
 
 function send_401()
