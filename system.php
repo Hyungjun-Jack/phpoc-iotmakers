@@ -1,6 +1,5 @@
 <?php
 
-include_once "/lib/sd_spc.php";
 include_once "/lib/sd_340.php";
 
 define("PROJECT_ID", "PROJECT_2018_4_04");
